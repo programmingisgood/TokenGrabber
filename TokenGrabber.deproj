@@ -4,6 +4,9 @@
     <filename>Camera.lua</filename>
   </file>
   <file>
+    <filename>DebugDrawer.lua</filename>
+  </file>
+  <file>
     <filename>PhysicsMixin.lua</filename>
   </file>
   <file>
@@ -14,6 +17,12 @@
   </file>
   <file>
     <filename>TokenGrabberPlayState.lua</filename>
+  </file>
+  <file>
+    <filename>Utils.lua</filename>
+  </file>
+  <file>
+    <filename>conf.lua</filename>
   </file>
   <file>
     <filename>main.lua</filename>

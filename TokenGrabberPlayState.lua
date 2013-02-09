@@ -11,20 +11,15 @@ require("PhysicsMixin")
 local kWorldWidth = 1280
 local kWorldHeight = 720
 
-local kPlayerMass = 1
-local kMovingDamping = 0.05
-local kStandingDamping = 1
+local kPlayerMass = 10
+local kPlayerMovingDamping = 1
+local kPlayerStandingDamping = 5
 local kMaxSpeed = 230
-local kMoveForce = 90000
-
-local kNetMass = 10
-
-local kPuckMass = 0.002
+local kMoveForce = 100000
+local kMoveForce2 = 256
 
 local kCollisionCategories = { }
 kCollisionCategories.player = 1
-kCollisionCategories.net = 2
-kCollisionCategories.puck = 3
 
 local function RandomPointInWorld()
     return vec2(RandomFloatBetween(100, kWorldWidth - 100), RandomFloatBetween(100, kWorldHeight - 100))
@@ -126,7 +121,7 @@ local function Init(self)
         player:SetupPhysics(self.physicsWorld, kPlayerMass, 0, love.physics.newRectangleShape(player:GetWidth(), player:GetHeight()))
         player:SetCollisionCategory(kCollisionCategories.player)
         --player:SetCollisionMask(kCollisionCategories.coin)
-        player:SetLinearDamping(kStandingDamping)
+        player:SetLinearDamping(kPlayerStandingDamping)
         player:SetMaxSpeed(kMaxSpeed)
         
         self.world:Add(player, { "Draws" })
@@ -141,7 +136,6 @@ local function Init(self)
     
     self.camera = Camera.Create()
     self.camera:SetWorldExtents(kWorldWidth, kWorldHeight)
-    --self.camera:SetFocusObject(self.player)
     
 end
 
@@ -187,43 +181,6 @@ local function ClampInput(controls)
 
 end
 
-local kMaxSkateMarkStrength = 200
-local function UpdateSkateMarks(staticBackground, player, dt)
-
-    local playerVel = player:GetLinearVelocity()
-    player.skateMarkVel = player.skateMarkVel or playerVel
-
-    local markStrength = playerVel:Sub(player.skateMarkVel):Length()
-    player.skateMarkVel = player.skateMarkVel:Add(playerVel:Sub(player.skateMarkVel):Mul(0.99 * dt))
-
-    markStrength = math.min(markStrength, kMaxSkateMarkStrength)
-    local markStrengthPercent = (markStrength / kMaxSkateMarkStrength)
-
-    if markStrength >= kMaxSkateMarkStrength / 2 then
-
-        staticBackground:renderTo(
-        function()
-
-            love.graphics.setColor(250, 250, 250, 10 * markStrengthPercent)
-            love.graphics.setLineStyle("smooth")
-            love.graphics.setLineWidth(2)
-
-            local pos = player:GetPosition():Add(vec2(8, player:GetHeight() / 2))
-            local lastPos = pos:Sub(player:GetLinearVelocity():Mul(dt))
-
-            love.graphics.line(pos.x, pos.y, lastPos.x, lastPos.y)
-
-            pos = player:GetPosition():Add(vec2(-8, player:GetHeight() / 2))
-            lastPos = pos:Sub(player:GetLinearVelocity():Mul(dt))
-            
-            love.graphics.line(pos.x, pos.y, lastPos.x, lastPos.y)
-
-        end)
-
-    end
-
-end
-
 local function UpdateMovement(player, dt)
 
     local controls = vec2(0, 0)
@@ -237,11 +194,12 @@ local function UpdateMovement(player, dt)
 
     if moving then
     
-        player:SetLinearDamping(kMovingDamping)
+        --player:SetPosition(player:GetPosition():Add(controls:Mul(dt * kMoveForce2)))
         player:ApplyForce(controls:Mul(dt * kMoveForce))
+        player:SetLinearDamping(kPlayerMovingDamping)
         
     else
-        player:SetLinearDamping(kStandingDamping)
+        player:SetLinearDamping(kPlayerStandingDamping)
     end
     
 end
@@ -254,7 +212,6 @@ local function Update(self, dt)
     
         local player = self.players[p]
         UpdateMovement(player, dt)
-        UpdateSkateMarks(self.staticBackground, player, dt)
 
         player:Update(dt)
         
@@ -270,6 +227,19 @@ end
 
 local function WorldDrawerSorter(a, b)
     return a:GetPosition().y < b:GetPosition().y
+end
+
+local function DrawStats(self)
+
+    DebugDrawer.DrawText(tostring(love.timer.getFPS()), vec2(10, 10), 0, color(0, 255, 0), "screen")
+    self.lastTimeTimeDrawn = self.lastTimeTimeDrawn or 0
+    if love.timer.getTime() - self.lastTimeTimeDrawn > 1 then
+    
+        DebugDrawer.DrawText(tostring(love.timer.getDelta()), vec2(10, 30), 1, color(0, 255, 0), "screen")
+        self.lastTimeTimeDrawn = love.timer.getTime()
+        
+    end
+    
 end
 
 local function Draw(self)
@@ -290,6 +260,8 @@ local function Draw(self)
     table.sort(worldDrawers, WorldDrawerSorter)
     Iterate(worldDrawers, function(object) object:Draw() end)
 
+    DrawStats(self)
+    
     DebugDrawer.Draw("world")
 
     love.graphics.pop()
