@@ -11,15 +11,16 @@ require("PhysicsMixin")
 local kWorldWidth = 1280
 local kWorldHeight = 720
 
-local kPlayerMass = 10
+local kPlayerMass = 5
 local kPlayerMovingDamping = 1
 local kPlayerStandingDamping = 5
-local kMaxSpeed = 230
+local kMaxSpeed = 300
 local kMoveForce = 100000
 local kMoveForce2 = 256
 
 local kCollisionCategories = { }
 kCollisionCategories.player = 1
+kCollisionCategories.world = 2
 
 local function RandomPointInWorld()
     return vec2(RandomFloatBetween(100, kWorldWidth - 100), RandomFloatBetween(100, kWorldHeight - 100))
@@ -50,39 +51,48 @@ local function CreateBackground(staticBackground)
     staticBackground:renderTo(
     function()
 
-        -- White background.
-        love.graphics.setColor(255, 255, 255, 255)
+        love.graphics.setColorMode("replace")
+        love.graphics.setColor(127, 51, 0, 255)
         love.graphics.rectangle("fill", 0, 0, kWorldWidth, kWorldHeight)
-
-        love.graphics.setLineStyle("smooth")
-        love.graphics.setLineWidth(8)
-
-        -- Middle circle.
-        love.graphics.setColor(0, 0, 255, 255)
-        love.graphics.circle("line", kWorldWidth / 2, kWorldHeight / 2, kWorldWidth / 4, 128)
-
-        -- Middle line.
-        love.graphics.setColor(255, 0, 0, 255)
-        love.graphics.line(0, kWorldHeight / 2, kWorldWidth, kWorldHeight / 2)
 
     end)
 
 end
 
-local function InitPlayerAnimations(player)
+local tileNames = { ST = "Stone Block Tall.png", W = "Wood Block.png", S = "Stone Block.png" }
+local tileImages = { }
+for name, file in pairs(tileNames) do
+    tileImages[name] = love.graphics.newImage("art/PlanetCute/" .. file)
+end
 
-    local animations = { }
-    animations["idle_up"] = { { frame = 1, time = 0 } }
-    animations["idle_down"] = { { frame = 6, time = 0 } }
-    animations["skate_up_sr"] = { { frame = 2, time = 0.2 }, { frame = 3, time = 0.2 } }
-    animations["skate_up_sl"] = { { frame = 4, time = 0.2 }, { frame = 5, time = 0.2 } }
-    animations["skate_down_sr"] = { { frame = 9, time = 0.2 }, { frame = 10, time = 0.2 } }
-    animations["skate_down_sl"] = { { frame = 7, time = 0.2 }, { frame = 8, time = 0.2 } }
+local worldObjects = { }
+table.insert(worldObjects, { tile = "S", pos = vec2(kWorldWidth / 2 - tileImages["S"]:getWidth(), 80) })
+table.insert(worldObjects, { tile = "S", pos = vec2(kWorldWidth / 2, 80) })
 
-    for name, anim in pairs(animations) do
-        player:AddAnimation(name, anim)
+local function AddWorldObjects(self)
+
+    for wo = 1, #worldObjects do
+    
+        local worldObjectInfo = worldObjects[wo]
+        
+        local worldObject = { }
+        InitMixin(worldObject, MovableMixin)
+        InitMixin(worldObject, SpriteMixin)
+        
+        worldObject:SetImage("art/PlanetCute/" .. tileNames[worldObjectInfo.tile], 1, 1)
+        worldObject:SetPosition(worldObjectInfo.pos)
+
+        InitMixin(worldObject, PhysicsMixin)
+        
+        local image = tileImages[worldObjectInfo.tile]
+        worldObject:SetupPhysics(self.physicsWorld, 0, 0, love.physics.newRectangleShape(image:getWidth(), image:getHeight()))
+        worldObject:SetCollisionCategory(kCollisionCategories.world)
+        worldObject:SetPhysicsType("static")
+        
+        self.world:Add(worldObject, { "Draws" })
+        
     end
-
+    
 end
 
 local function Init(self)
@@ -100,6 +110,8 @@ local function Init(self)
     table.insert(spawnPoints, vec2(kWorldWidth / 2 - 100, kWorldHeight / 2 + 100))
     table.insert(spawnPoints, vec2(kWorldWidth / 2 + 100, kWorldHeight / 2 + 100))
     
+    local characters = { "Character Boy.png", "Character Cat Girl.png", "Character Horn Girl.png", "Character Pink Girl.png" }
+    
     self.players = { }
     for p = 1, 4 do
     
@@ -107,12 +119,9 @@ local function Init(self)
         InitMixin(player, MovableMixin)
         InitMixin(player, SpriteMixin)
         
-        player:SetImage("art/SuperHockey/HockeyPlayer.png", 3, 5)
-        player:SetScale(vec2(2, 2))
+        player:SetImage("art/PlanetCute/" .. characters[p], 1, 1)
+        player:SetScale(vec2(1, 1))
         player:SetPosition(spawnPoints[p])
-
-        InitPlayerAnimations(player)
-        player:SetAnimation("idle_up")
 
         player.input = SimpleInput.Create(p)
         
@@ -133,6 +142,8 @@ local function Init(self)
     self.staticBackground = love.graphics.newCanvas(kWorldWidth, kWorldHeight)
     
     CreateBackground(self.staticBackground)
+    
+    AddWorldObjects(self)
     
     self.camera = Camera.Create()
     self.camera:SetWorldExtents(kWorldWidth, kWorldHeight)
@@ -190,12 +201,12 @@ local function UpdateMovement(player, dt)
 
     local moving = math.abs(controls.x) > 0 or math.abs(controls.y) > 0
 
-    UpdatePlayerAnimation(player, moving, controls)
+    --UpdatePlayerAnimation(player, moving, controls)
 
     if moving then
     
         --player:SetPosition(player:GetPosition():Add(controls:Mul(dt * kMoveForce2)))
-        player:ApplyForce(controls:Mul(dt * kMoveForce))
+        player:ApplyLinearImpulse(controls:Mul(dt * kMoveForce))
         player:SetLinearDamping(kPlayerMovingDamping)
         
     else

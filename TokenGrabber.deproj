@@ -13,6 +13,9 @@
     <filename>SimpleInput.lua</filename>
   </file>
   <file>
+    <filename>SpriteMixin.lua</filename>
+  </file>
+  <file>
     <filename>TokenGrabberGame.lua</filename>
   </file>
   <file>

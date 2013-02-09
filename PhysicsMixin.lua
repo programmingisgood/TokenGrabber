@@ -64,6 +64,10 @@ function PhysicsMixin:ApplyForce(forceVec)
     self.body:applyForce(forceVec.x, forceVec.y)
 end
 
+function PhysicsMixin:ApplyLinearImpulse(impulseVec)
+    self.body:applyLinearImpulse(impulseVec.x, impulseVec.y)
+end
+
 function PhysicsMixin:GetLinearVelocity()
 
     local x, y = self.body:getLinearVelocity()

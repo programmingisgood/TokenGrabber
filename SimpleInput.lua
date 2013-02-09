@@ -34,8 +34,8 @@ local function Axis(index, axis) return love.joystick.getAxis(index, axis) end
 local function Button(index, button) return (love.joystick.isDown(index, button) and 1) or 0 end
 
 local kJoyInputConfigs = { }
-kJoyInputConfigs["X"] = function(index) return Axis(index, 0) end
-kJoyInputConfigs["Y"] = function(index) return Axis(index, 1) end
+kJoyInputConfigs["X"] = function(index) return Axis(index, 1) end
+kJoyInputConfigs["Y"] = function(index) return Axis(index, 2) end
 kJoyInputConfigs["V"] = function(index) return Axis(index, 4) end
 kJoyInputConfigs["W"] = function(index) return Axis(index, 3) end
 kJoyInputConfigs["A"] = function(index) return Button(index, 0) end
