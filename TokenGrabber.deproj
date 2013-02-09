@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+  <file>
+    <filename>Camera.lua</filename>
+  </file>
+  <file>
+    <filename>PhysicsMixin.lua</filename>
+  </file>
+  <file>
+    <filename>SimpleInput.lua</filename>
+  </file>
+  <file>
+    <filename>TokenGrabberGame.lua</filename>
+  </file>
+  <file>
+    <filename>TokenGrabberPlayState.lua</filename>
+  </file>
+  <file>
+    <filename>main.lua</filename>
+  </file>
+</project>
